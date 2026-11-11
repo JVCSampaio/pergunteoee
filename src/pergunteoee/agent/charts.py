@@ -110,6 +110,7 @@ def _style(fig: go.Figure, title: str, ratios: bool) -> go.Figure:
         font={"family": "DejaVu Sans, sans-serif", "color": "#1C1917"},
         paper_bgcolor="#FBF7F2",
         plot_bgcolor="#FBF7F2",
+        height=340,
     )
     if ratios:
         fig.update_yaxes(tickformat=".0%")

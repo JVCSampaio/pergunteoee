@@ -19,6 +19,15 @@ from pergunteoee.data.oee import VIEW_SQL
 DATA_FIM = date(2026, 3, 31)
 N_DAYS = 90
 MIN_OPERATING = 60
+# Centro de performance e de qualidade por linha. É uma escolha do gerador
+# sintético para que as linhas não saiam idênticas: L2 é a mais estável,
+# L4 (confeitaria) rende menos e perde um pouco mais em refugo.
+_RITMO = {
+    "L1": (0.90, 0.993),
+    "L2": (0.95, 0.996),
+    "L3": (0.87, 0.990),
+    "L4": (0.82, 0.984),
+}
 
 MOTIVOS_PLANEJADOS = (
     "Higienização",
@@ -232,8 +241,9 @@ def generate_rows(seed: int) -> tuple[list[tuple], list[tuple], list[tuple]]:
                     primeira = int(operando * rng.uniform(0.35, 0.65))
                     fatias = [primeira, operando - primeira]
 
-                desempenho = _clip(rng.gauss(0.91, 0.03), 0.80, 1.01)
-                qualidade = _clip(rng.gauss(0.994, 0.002), 0.98, 0.999)
+                centro_desempenho, centro_qualidade = _RITMO[linha.linha]
+                desempenho = _clip(rng.gauss(centro_desempenho, 0.025), 0.74, 1.02)
+                qualidade = _clip(rng.gauss(centro_qualidade, 0.003), 0.96, 0.999)
                 if any(motivo == "Ajuste de qualidade" for _, _, motivo, _ in agenda.intervalos):
                     qualidade = _clip(qualidade - rng.uniform(0.008, 0.02), 0.96, 0.995)
 

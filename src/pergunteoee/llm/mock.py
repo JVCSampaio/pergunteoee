@@ -122,12 +122,11 @@ def _explain(user: str) -> str:
     if not rows:
         return "A consulta não retornou linhas para essa pergunta."
     described = [_describe_row(columns, row) for row in rows[:6]]
-    text = (
-        "Consulta na base sintética, sem modelo de linguagem. "
-        f"Vieram {len(rows)} linha(s). " + " ".join(described)
+    text = "Sem modelo de linguagem: o texto só repete a tabela da base sintética. " + " ".join(
+        described
     )
     if len(rows) > 6:
-        text += f" A tabela mostra mais {len(rows) - 6} linha(s)."
+        text += f" A tabela tem mais {len(rows) - 6} linhas."
     return text
 
 
@@ -137,7 +136,7 @@ def _describe_row(columns: list[str], row: str) -> str:
     for index, cell in enumerate(cells):
         name = columns[index] if index < len(columns) and columns[index] else f"coluna {index + 1}"
         pairs.append(f"{name} {_format_cell(name, cell)}")
-    return "; ".join(pairs) + "."
+    return ", ".join(pairs) + "."
 
 
 def _format_cell(column: str, value: str) -> str:
