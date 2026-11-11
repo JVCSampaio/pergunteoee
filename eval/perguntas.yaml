@@ -1,0 +1,286 @@
+# Perguntas em português com SQL de referência.
+# A acurácia de execução compara o resultado deste SQL com o resultado do SQL do agente.
+# A ordem das linhas não importa. Números aceitam tolerância absoluta de 0,001.
+
+versao: 1
+perguntas:
+  - id: oee_medio_por_linha
+    pergunta: Qual é o OEE médio de cada linha?
+    sql: |
+      SELECT linha, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: oee_medio_por_turno
+    pergunta: Qual é o OEE médio de cada turno?
+    sql: |
+      SELECT turno, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY turno
+      ORDER BY turno
+
+  - id: componentes_por_linha
+    pergunta: Qual é a média de disponibilidade, performance e qualidade de cada linha?
+    sql: |
+      SELECT
+          linha,
+          ROUND(AVG(disponibilidade), 4) AS disponibilidade,
+          ROUND(AVG(performance), 4) AS performance,
+          ROUND(AVG(qualidade), 4) AS qualidade
+      FROM vw_oee
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: producao_vs_meta_por_linha
+    pergunta: Quanto cada linha produziu em relação à meta?
+    sql: |
+      SELECT
+          linha,
+          SUM(produzido) AS produzido,
+          SUM(meta) AS meta,
+          ROUND(SUM(produzido) * 1.0 / SUM(meta), 4) AS atingimento
+      FROM producao
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: linha_maior_oee
+    pergunta: Qual linha teve o maior OEE médio?
+    sql: |
+      SELECT linha, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY linha
+      ORDER BY oee_medio DESC, linha
+      LIMIT 1
+
+  - id: pior_dia_l1
+    pergunta: Em qual data a linha L1 teve o menor OEE médio do dia?
+    sql: |
+      SELECT data, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      WHERE linha = 'L1'
+      GROUP BY data
+      ORDER BY oee_medio ASC, data
+      LIMIT 1
+
+  - id: refugo_por_produto
+    pergunta: Qual é o refugo total de cada produto?
+    sql: |
+      SELECT produto, SUM(refugo) AS refugo
+      FROM producao
+      GROUP BY produto
+      ORDER BY refugo DESC, produto
+
+  - id: maior_taxa_refugo
+    pergunta: Qual produto teve a maior taxa de refugo?
+    sql: |
+      SELECT
+          produto,
+          SUM(refugo) AS refugo,
+          SUM(produzido + refugo) AS total,
+          ROUND(SUM(refugo) * 1.0 / SUM(produzido + refugo), 4) AS taxa_refugo
+      FROM producao
+      GROUP BY produto
+      ORDER BY taxa_refugo DESC, produto
+      LIMIT 1
+
+  - id: minutos_nao_planejados_por_linha
+    pergunta: Quantos minutos cada linha ficou em parada não planejada?
+    sql: |
+      SELECT
+          linha,
+          SUM(CAST(epoch(fim - inicio) / 60 AS INTEGER)) AS minutos
+      FROM paradas
+      WHERE categoria = 'nao_planejada'
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: minutos_planejados_por_linha
+    pergunta: Quantos minutos cada linha ficou em parada planejada?
+    sql: |
+      SELECT
+          linha,
+          SUM(CAST(epoch(fim - inicio) / 60 AS INTEGER)) AS minutos
+      FROM paradas
+      WHERE categoria = 'planejada'
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: top5_motivos
+    pergunta: Quais são os cinco motivos de parada que somaram mais minutos?
+    sql: |
+      SELECT
+          motivo,
+          SUM(CAST(epoch(fim - inicio) / 60 AS INTEGER)) AS minutos
+      FROM paradas
+      GROUP BY motivo
+      ORDER BY minutos DESC, motivo
+      LIMIT 5
+
+  - id: frequencia_motivos_nao_planejados
+    pergunta: Quais motivos de parada não planejada aconteceram mais vezes?
+    sql: |
+      SELECT motivo, COUNT(*) AS ocorrencias
+      FROM paradas
+      WHERE categoria = 'nao_planejada'
+      GROUP BY motivo
+      ORDER BY ocorrencias DESC, motivo
+
+  - id: oee_por_linha_e_turno
+    pergunta: Qual é o OEE médio por linha e por turno?
+    sql: |
+      SELECT linha, turno, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY linha, turno
+      ORDER BY linha, turno
+
+  - id: contagem_registros_producao
+    pergunta: Quantos registros existem na tabela de produção?
+    sql: |
+      SELECT COUNT(*) AS registros
+      FROM producao
+
+  - id: capacidade_nominal
+    pergunta: Qual é a capacidade nominal de cada linha?
+    sql: |
+      SELECT linha, nome, capacidade_nominal_un_h
+      FROM linhas
+      ORDER BY linha
+
+  - id: producao_turno_3
+    pergunta: Quanto cada linha produziu no turno 3?
+    sql: |
+      SELECT linha, SUM(produzido) AS produzido
+      FROM producao
+      WHERE turno = 3
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: turnos_abaixo_da_meta
+    pergunta: Em quantos turnos cada linha produziu abaixo da meta?
+    sql: |
+      SELECT linha, COUNT(*) AS turnos_abaixo
+      FROM (
+          SELECT data, turno, linha, SUM(produzido) AS produzido, SUM(meta) AS meta
+          FROM producao
+          GROUP BY data, turno, linha
+      ) AS turno_linha
+      WHERE produzido < meta
+      GROUP BY linha
+      ORDER BY linha
+
+  - id: paradas_longas_por_categoria
+    pergunta: Quantas paradas duraram mais de 60 minutos, por categoria?
+    sql: |
+      SELECT categoria, COUNT(*) AS paradas
+      FROM paradas
+      WHERE CAST(epoch(fim - inicio) / 60 AS INTEGER) > 60
+      GROUP BY categoria
+      ORDER BY categoria
+
+  - id: oee_medio_l2
+    pergunta: Qual é o OEE médio da linha L2?
+    sql: |
+      SELECT ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      WHERE linha = 'L2'
+
+  - id: serie_diaria_l1
+    pergunta: Qual foi a produção e a meta da linha L1 em cada data?
+    sql: |
+      SELECT data, SUM(produzido) AS produzido, SUM(meta) AS meta
+      FROM producao
+      WHERE linha = 'L1'
+      GROUP BY data
+      ORDER BY data
+
+  - id: categoria_com_mais_minutos
+    pergunta: Qual categoria de parada consumiu mais minutos no total?
+    sql: |
+      SELECT
+          categoria,
+          SUM(CAST(epoch(fim - inicio) / 60 AS INTEGER)) AS minutos
+      FROM paradas
+      GROUP BY categoria
+      ORDER BY minutos DESC, categoria
+      LIMIT 1
+
+  - id: qualidade_por_produto
+    pergunta: Qual é a qualidade de cada produto, medida como unidades boas sobre o total?
+    sql: |
+      SELECT
+          produto,
+          ROUND(SUM(produzido) * 1.0 / SUM(produzido + refugo), 4) AS qualidade
+      FROM producao
+      GROUP BY produto
+      ORDER BY produto
+
+  - id: minutos_por_motivo_l3
+    pergunta: Na linha L3, quantos minutos durou cada motivo de parada não planejada?
+    sql: |
+      SELECT
+          motivo,
+          SUM(CAST(epoch(fim - inicio) / 60 AS INTEGER)) AS minutos
+      FROM paradas
+      WHERE linha = 'L3' AND categoria = 'nao_planejada'
+      GROUP BY motivo
+      ORDER BY minutos DESC, motivo
+
+  - id: melhor_turno
+    pergunta: Qual turno tem o melhor OEE médio?
+    sql: |
+      SELECT turno, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY turno
+      ORDER BY oee_medio DESC, turno
+      LIMIT 1
+
+  - id: producao_por_produto
+    pergunta: Qual é a produção total de cada produto?
+    sql: |
+      SELECT produto, SUM(produzido) AS produzido
+      FROM producao
+      GROUP BY produto
+      ORDER BY produzido DESC, produto
+
+  - id: linha_com_mais_refugo
+    pergunta: Qual linha teve mais refugo no período?
+    sql: |
+      SELECT linha, SUM(refugo) AS refugo
+      FROM producao
+      GROUP BY linha
+      ORDER BY refugo DESC, linha
+      LIMIT 1
+
+  - id: oee_por_semana
+    pergunta: Qual é o OEE médio da fábrica em cada semana?
+    sql: |
+      SELECT date_trunc('week', data)::DATE AS semana, ROUND(AVG(oee), 4) AS oee_medio
+      FROM vw_oee
+      GROUP BY 1
+      ORDER BY 1
+
+  - id: contagem_paradas_por_categoria
+    pergunta: Quantas paradas existem em cada categoria?
+    sql: |
+      SELECT categoria, COUNT(*) AS paradas
+      FROM paradas
+      GROUP BY categoria
+      ORDER BY categoria
+
+  - id: total_fabrica_contra_meta
+    pergunta: No período inteiro, quanto a fábrica produziu, qual era a meta e qual foi a diferença?
+    sql: |
+      SELECT
+          SUM(produzido) AS produzido,
+          SUM(meta) AS meta,
+          SUM(produzido) - SUM(meta) AS diferenca
+      FROM producao
+
+  - id: disponibilidade_por_linha
+    pergunta: Qual é a disponibilidade média de cada linha?
+    sql: |
+      SELECT linha, ROUND(AVG(disponibilidade), 4) AS disponibilidade
+      FROM vw_oee
+      GROUP BY linha
+      ORDER BY linha

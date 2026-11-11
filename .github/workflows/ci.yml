@@ -27,3 +27,6 @@ jobs:
 
       - name: Testes
         run: uv run pytest
+
+      - name: Avaliação com o provider mock
+        run: uv run python -m pergunteoee.eval.run --provider mock --out /tmp/eval-mock.json
